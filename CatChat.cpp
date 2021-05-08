@@ -2,7 +2,7 @@
 //
 
 #include <iostream>
-#include <string>
+#include <cstring>
 
 using namespace std;
 
@@ -142,7 +142,7 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    if (_stricmp(argv[1], "encode") == 0)
+    if (strcmp(argv[1], "encode") == 0)
     {
         string resultString;
         int wordIndex = 2;
@@ -169,7 +169,7 @@ int main(int argc, char* argv[])
 
         cout << "Resulting CatChat:\n" << resultString << "\n";
     }
-    else if (_stricmp(argv[1], "decode") == 0)
+    else if (strcmp(argv[1], "decode") == 0)
     {
         string resultString;
         char* catStringPtr = argv[2];
