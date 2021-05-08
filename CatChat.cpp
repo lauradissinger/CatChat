@@ -6,7 +6,7 @@
 
 using namespace std;
 
-bool AppendCharacter(string& resultString, char charToAppend)
+bool EncodeCharacter(string& resultString, char charToAppend)
 {
     char ebcdicValue = 0;
     if (charToAppend >= 'A' && charToAppend <= 'I')
@@ -61,49 +61,133 @@ bool AppendCharacter(string& resultString, char charToAppend)
     return true;
 }
 
+bool DecodeString(string& resultString, char** catStringPtr)
+{
+    if (catStringPtr == nullptr || *catStringPtr == nullptr)
+    {
+        cout << "Invalid pointer\n";
+        return false;
+    }
+
+    unsigned char ebcdicValue = 0;
+    char charToAppend = 0;
+
+    for (int i = 7; i >= 0; --i)
+    {
+        if (strncmp(*catStringPtr, "CAT", 3) == 0)
+        {
+            ebcdicValue |= (1 << i);
+        }
+        else if (strncmp(*catStringPtr, "cat", 3) == 0)
+        {
+            // no-op
+        }
+        else
+        {
+            cout << "Invalid input, needs to be CAT or cat\n";
+            return false;
+        }
+        *catStringPtr += 3;
+    }
+
+    if (ebcdicValue >= 0xC1 && ebcdicValue <= 0xC9)
+    {
+        charToAppend = 'A' + (ebcdicValue - 0xC1);
+    }
+    else if (ebcdicValue >= 0xD1 && ebcdicValue <= 0xD9)
+    {
+        charToAppend = 'J' + (ebcdicValue - 0xD1);
+    }
+    else if (ebcdicValue >= 0xE2 && ebcdicValue <= 0xE9)
+    {
+        charToAppend = 'S' + (ebcdicValue - 0xE2);
+    }
+    else if (ebcdicValue >= 0x81 && ebcdicValue <= 0x89)
+    {
+        charToAppend = 'a' + (ebcdicValue - 0x81);
+    }
+    else if (ebcdicValue >= 0x91 && ebcdicValue <= 0x99)
+    {
+        charToAppend = 'j' + (ebcdicValue - 0x91);
+    }
+    else if (ebcdicValue >= 0xA2 && ebcdicValue <= 0xA9)
+    {
+        charToAppend = 's' + (ebcdicValue - 0xA2);
+    }
+    else if (ebcdicValue >= 0xF0 && ebcdicValue <= 0xF9)
+    {
+        charToAppend = '0' + (ebcdicValue - 0xF0);
+    }
+    else if (ebcdicValue == 0x40)
+    {
+        charToAppend = ' ';
+    }
+    else
+    {
+        cout << "Character not handled: " << charToAppend << "\n";
+        return false;
+    }
+
+    resultString.append(1, charToAppend);
+
+    return true;
+}
+
 int main(int argc, char* argv[])
 {
-    if (argc < 2)
+    if (argc < 3)
     {
-        cout << "Usage: CatChat <message to convert>\n";
+        cout << "Usage: CatChat encode <message to encode>\n";
+        cout << "Usage: CatChat decode <message to decode>\n";
         return 0;
     }
 
-    string resultString;
-    int wordIndex = 1;
-    while (wordIndex < argc)
+    if (_stricmp(argv[1], "encode") == 0)
     {
-        char* nextChar = argv[wordIndex];
-        while (*nextChar != '\0')
+        string resultString;
+        int wordIndex = 2;
+        while (wordIndex < argc)
         {
-            if (!AppendCharacter(resultString, *nextChar))
+            char* nextChar = argv[wordIndex];
+            while (*nextChar != '\0')
+            {
+                if (!EncodeCharacter(resultString, *nextChar))
+                {
+                    return 1;
+                }
+                ++nextChar;
+            }
+
+            if (wordIndex + 1 < argc)
+            {
+                // Add a space
+                EncodeCharacter(resultString, ' ');
+            }
+
+            ++wordIndex;
+        }
+
+        cout << "Resulting CatChat:\n" << resultString << "\n";
+    }
+    else if (_stricmp(argv[1], "decode") == 0)
+    {
+        string resultString;
+        char* catStringPtr = argv[2];
+        while (catStringPtr[0] != '\0')
+        {
+            if (!DecodeString(resultString, &catStringPtr))
             {
                 return 1;
             }
-            ++nextChar;
         }
 
-        if (wordIndex + 1 < argc)
-        {
-            // Add a space
-            AppendCharacter(resultString, ' ');
-        }
-
-        ++wordIndex;
+        cout << "Resulting CatChat:\n" << resultString << "\n";
     }
-
-    cout << "Resulting CatChat:\n" << resultString << "\n";
+    else
+    {
+        cout << "Unrecognized command: " << argv[1] << "\n";
+        return 1;
+    }
 
     return 0;
 }
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
